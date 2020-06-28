@@ -4,7 +4,9 @@ import (
 	_ "bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jasonlvhit/gocron"
+	"time"
+
+	"github.com/go-co-op/gocron"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,17 +18,28 @@ type ActivityDto struct {
 	ActivityName string `json:"activityName"`
 }
 
+func getActivity(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintf(w, "You are calling /api/activity/get Reminder API manually!")
+	fmt.Println("Endpoint Hit: /getActivity")
+	get()
+}
+
+func handleRequests() {
+	http.HandleFunc("/getActivity", getActivity)
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
 
 func main() {
-	s := gocron.NewScheduler()
-	s.Every(2).Hours().Do(get)
-	<-s.Start()
+	handleRequests()
+	s1 := gocron.NewScheduler(time.UTC)
+	s1.Every(3).Seconds().Do(get)
+	<-s1.StartAsync()
 }
 
 
 func get() {
 	fmt.Println("1. Performing Http Get...")
-	resp, err := http.Get("http://reminderapidev-env.eba-5pppvizn.ap-northeast-1.elasticbeanstalk.com/api/activityruntime/get")
+	resp, err := http.Get("http://reminderapidev-env.eba-5pppvizn.ap-northeast-1.elasticbeanstalk.com/api/activity/get")
 	if err != nil {
 		log.Fatalln(err)
 	}

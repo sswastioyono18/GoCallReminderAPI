@@ -1,26 +1,26 @@
-# Golang CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
+
 jobs:
-  build:
+  build-and-deploy:
     docker:
-      # specify the version
-      - image: circleci/golang:1.9
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/tyo07/GoCallReminderAPI
+      - image: google/cloud-sdk
     steps:
       - checkout
+      - run:
+          name : install pyopenssl
+          command : pip install pyopenssl
+      - run:
+          name : set gcloud config
+          command : |
+            echo $GCLOUD_KEY | base64 --decode | gcloud auth activate-service-account gocallreminderapi@grounded-access-123008.iam.gserviceaccount.com --key-file=-
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+      - deploy:
+          name: Deploying to App Engine
+          command: gcloud app deploy app.yaml
 
-      # specify any bash command here prefixed with `run: `
-      - run: go get -v -t -d ./...
-      - run: go test -v ./...
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build-and-deploy
